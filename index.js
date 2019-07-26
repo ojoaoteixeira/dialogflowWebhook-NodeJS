@@ -40,6 +40,12 @@
 //
 // exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app)
 
+// MAP
+// MAP
+// MAP
+// MAP
+// --> https://app.mindmup.com/map/_free/2019/07/c13439f0afa911e9bd8721f7ba8a01fe
+
 
 const express = require('express')
 const { WebhookClient } = require('dialogflow-fulfillment')
