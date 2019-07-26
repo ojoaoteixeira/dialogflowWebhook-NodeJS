@@ -16,7 +16,7 @@ module.exports = {
         'yes': 'hey, i\'m parisian as well !',
         'no': 'good for u, Paris is stressfull ^^'
     },
-    'planet': 'ow ! I know this place ! I have an ex-boyfriend there ... i\'ll never go back there i swear !',
+    'planet': 'ow ! I know this place ! I have an ex-sexfriend there ... i\'ll never go back there i swear !',
     'superpowerYesNo': {
         'yes': 'dammn son !',
         'no': 'haha don\'t worry, you are legion without any power ;)'

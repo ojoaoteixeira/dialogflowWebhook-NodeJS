@@ -8,7 +8,7 @@ module.exports = {
         'yes' : 'and tell me why u so mad .. ?',
         'no' : 'now tell me what is your favorite color ?'
     },
-    'hostileWhy': '..mm I understand bro, but hey, let\'s think to something else, tell me, what is your favorite color ? :D ',
+    'hostileWhy': '..but hey, let\'s think to something else, tell me, what is your favorite color ? :D ',
     'mariedYesNo': 'and u live in paris ?',
     'parisienYesNo': 'ok now, tell me what is your favorite color ?',
 
