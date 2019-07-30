@@ -139,6 +139,10 @@ app.post('/dialogflow', express.json(), (req, res) => {
 
         currentUser.superpowerYesNo = agent.parameters.yesNoMaybe
 
+        if (typeof agent.parameters.yesNoMaybe === 'object') {
+            currentUser.superpowerYesNo = agent.parameters.yesNoMaybe[0];
+        }
+
         if (currentUser.superpowerYesNo === 'yes') {
             agent.addResponse_(responses.superpowerYesNo.yes)
             agent.addResponse_(relances.superpowerYesNo.yes)
@@ -188,6 +192,15 @@ app.post('/dialogflow', express.json(), (req, res) => {
 
 
 
+    // MANUAL ORIENTATION
+    // to avoid confusions in intents orientations
+    // if (agent.action === 'humanOrAlienChoice') {
+
+    // }
+
+
+
+
 
     // Mapping Intents
     let intentMap = new Map()
@@ -219,6 +232,7 @@ app.post('/dialogflow', express.json(), (req, res) => {
     console.log('intent détécté : ', agent.intent);
     console.log('parametres reçus : ', agent.parameters);
     console.log('context reçus : ', agent.contexts);
+    console.log('action reçus : ', agent.action);
 
     console.log('le log currentUser : ', currentUser);
 
