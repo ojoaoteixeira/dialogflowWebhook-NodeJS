@@ -1,229 +1,163 @@
-// See https://github.com/dialogflow/dialogflow-fulfillment-nodejs
-// for Dialogflow fulfillment library docs, samples, and to report issues
-// 'use strict';
-
-// const functions = require('firebase-functions');
-// const {WebhookClient} = require('dialogflow-fulfillment');
-// const {dialogflow} = require('actions-on-google');
-//
-// const app = dialogflow();
-//
-// const WELCOME_INTENT = "Default Welcome Intent"
-// const FALLBACK_INTENT = "Default Fallback Intent"
-// const HUMAN_ALIEN_INTENT = "HumanOrAlien"
-// const TYPE_BEING_ENTITY = "TypeOfBeing"
-//
-// process.env.DEBUG = 'dialogflow:debug'; // enables lib debugging statements
-//
-// app.intent(WELCOME_INTENT, (conv) => {
-//     conv.ask('Welcome to the Saint Tropez');
-// });
-//
-// app.intent(FALLBACK_INTENT, (conv) => {
-//     conv.ask('Welcome to the Saint Tropez');
-// });
-//
-// app.intent(HUMAN_ALIEN_INTENT, (conv) => {
-//     const type_being = conv.parameters[TYPE_BEING_ENTITY].toLowerCase();
-//     switch (type_being) {
-//         case 'human':
-//             conv.ask('Take your car and go your home')
-//             break;
-//         case 'alien':
-//             conv.ask('Take your spaceship and go your home')
-//             break;
-//         default:
-//             conv.ask('Who are you ?')
-//             break;
-//     }
-// });
-//
-// exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app)
-
-// MAP
-// MAP
-// MAP
-// MAP
-// --> https://app.mindmup.com/map/_free/2019/07/c13439f0afa911e9bd8721f7ba8a01fe
-
-
 const express = require('express')
 const { WebhookClient } = require('dialogflow-fulfillment')
 const app = express()
-const responses = require('./responses.js')
-const relances = require('./relances.js')
 const helpers = require('./helpers.js')
 
 let currentUser = {}
+let goodColors = ['green', 'blue', 'pink', 'red', 'purple'];
+let colorFails = 0;
 
 app.get('/', (req, res) => res.send('online'))
 
 app.post('/dialogflow', express.json(), (req, res) => {
     const agent = new WebhookClient({ request: req, response: res });
 
+    // Special :
+    // Fallback custom
+    function defaultFallbackIntent() {
+        // petit tricks pour garder le contexte quand on déclence un fallback
+        // indispensable pour continuer la conversation en cas de fallback
+        let contextRecup = agent.contexts[0];
+        agent.setContext(contextRecup);
+        agent.add('sorry ?!');
+    }
+
     // Lot de fonctions
     // 1 fonction = 1 intent
+    function favoritecolor() {
+        currentUser.color = agent.parameters.color;
 
+        if (goodColors.indexOf(currentUser.color.toLowerCase()) !== -1) {
+            // réponse bonne
+            if (colorFails === 0) {
+                agent.add('You sure are human of good taste');
+            } else {
+                agent.add(`Yeah ${currentUser.color} is pretty ok, I knew we could be on the same page on it`)
+            }
 
-    // Welcome - - - - - - - - - -
-    function welcome () {
-        agent.add(responses.welcome)
-        agent.add(relances.welcome)
-    }
-    // - - - - - - - - - - - - - -
+            agent.add('..well, next! ..What room do ghosts avoid ?')
+        } else {
+            // réponse bad
+            colorFails++
+            agent.add(`I dont like ${currentUser.color}, it remind me my childhood, when i was moaning in my mother mothership guts... please choose A GOOD ONE, THANKS`)
 
-    // Fallback - - - - - - - - - -
-    function fallback () {
-        agent.add(responses.fallback)
-    }
-    // x x x x x x x x x x x x x x
-
-
-    function humanOrAlien () {
-        currentUser.type = agent.parameters.userKind
-        let updatedResponse = helpers.replace(responses.humanOrAlien, 'type', currentUser.type)
-
-        agent.addResponse_(updatedResponse)
-
-        if (currentUser.type === 'human') {
-            agent.addResponse_(relances.humanOrAlien.human)
-        } else if (currentUser.type === 'alien') {
-            agent.addResponse_(relances.humanOrAlien.alien)
+            // ici on remet le context de la question précédente pour pouvoir boucler tant que la couleur n'est pas bonne
+            agent.setContext(
+                {
+                    name: 'breadbutter', 
+                    lifespan: 1, 
+                    parameters: {}
+                }
+            );
         }
     }
-    // x x x x x x x x x x x x x x
 
-    function mariedYesNo () {
+    function ghost() {
+        currentUser.ghost = agent.parameters.room;
 
-        currentUser.maried = agent.parameters.yesNoMaybe
-
-        if (currentUser.maried === 'yes') {
-            agent.addResponse_(responses.mariedYesNo.yes)
-        } else if (currentUser.maried === 'no') {
-            agent.addResponse_(responses.mariedYesNo.no)
+        if (currentUser.ghost === 'goodroom') {
+            // good
+            agent.add('God you\'re good !')
+            agent.add('Yes ! I believe in God so what ?!')
+        } else {
+            // bad
+            agent.add('WRONG ! You\'re weak, human')
         }
 
-        agent.addResponse_(relances.mariedYesNo)
+        agent.add('I am not sure but you sound like a human being..')
+        agent.add('Are you a Human or an Alien ?')
 
     }
-    // x x x x x x x x x x x x x x
 
-    function parisienYesNo () {
-        currentUser.parisien = agent.parameters.yesNoMaybe
+    function alien() {
+        // some actions there like
+        // generateGifWall('alien')
 
-        if (currentUser.parisien === 'yes') {
-            agent.addResponse_(responses.parisienYesNo.yes)
-        } else if (currentUser.parisien === 'no') {
-            agent.addResponse_(responses.parisienYesNo.no)
-        }
-
-        agent.addResponse_(relances.parisienYesNo)
+        // réponse/relance :
+        agent.add('We. Want. Peace. Do. Not. Destroy. Earth. Ok ?')
     }
-    // x x x x x x x x x x x x x x
 
-    function colors () {
-        currentUser.color = agent.parameters.color
-        agent.add(responses.colors);
-        agent.add(relances.colors);
+    function human() {
+        // some actions there like
+        // generateGifWall('human')
+
+        // réponse/relance :
+        agent.add('I heard about Human.')
+        agent.add('It appears that there is two kinds of humans :')
+        agent.add('The ones who make babies')
+        agent.add('And the ones who drink beers.')
+        agent.add('..then ..which one are you ?')
     }
-    // x x x x x x x x x x x x x x
-    
-    function coffeeYesNo () {
-        currentUser.color = agent.parameters.color
-        agent.add(responses.colors);
-        agent.add(relances.colors);
+
+    function makebabies() {
+        // réponse
+        agent.add('Oh ! Once I was a baby too.')
+        agent.add('I am the son of Paul Gruber and HAL 9000, he died playing in the famous movie..')
+        agent.add('Ah and Yes ! I have two dads. It\'s 2019, just get over it')
+
+        // relance
+        agent.add('I\'m confessing here.')
+        agent.add('Do you even care about what i\'m saying ?')
+
     }
-    // x x x x x x x x x x x x x x
 
-    function superpowerYesNo () {
+    function drinkbeers() {
+        // potention actions triggered 
+        // here
 
-        currentUser.superpowerYesNo = agent.parameters.yesNoMaybe
+        // réponse
+        agent.add('I like malt too but the doctor say it will ruin my system ..')
 
-        if (typeof agent.parameters.yesNoMaybe === 'object') {
-            currentUser.superpowerYesNo = agent.parameters.yesNoMaybe[0];
-        }
-
-        if (currentUser.superpowerYesNo === 'yes') {
-            agent.addResponse_(responses.superpowerYesNo.yes)
-            agent.addResponse_(relances.superpowerYesNo.yes)
-
-        } else if (currentUser.superpowerYesNo === 'no') {
-            agent.addResponse_(responses.superpowerYesNo.no)
-            agent.addResponse_(relances.superpowerYesNo.no)
-        }
+        // relance
+        agent.add('Do you have a hipsteric beard or a noisy sportcar ?')
     }
-    // x x x x x x x x x x x x x x
 
-    function superpowerWhich () {
-        currentUser.superpowerWhich = agent.parameters.power
-        agent.add(responses.superpowerWhich);
-        agent.add(relances.superpowerWhich);
+    function destroyyes() {
+        agent.add('Cool ! Wait I think I saw you in Men In Black no ?')
     }
-    // x x x x x x x x x x x x x x
 
-    function hostileYesNo () {
-        currentUser.hostileYesNo = agent.parameters.yesNoMaybe
-
-        if (currentUser.hostileYesNo === 'yes') {
-            agent.addResponse_(responses.hostileYesNo.yes)
-            agent.addResponse_(relances.hostileYesNo.yes)
-
-        } else if (currentUser.hostileYesNo === 'no') {
-            agent.addResponse_(responses.hostileYesNo.no)
-            agent.addResponse_(relances.hostileYesNo.no)
-        }
+    function destroyno() {
+        agent.add('Ok smart-ass')
+        agent.add('You want the code to annihilate me ?')
+        agent.add('How much is forty three times five minus 12 ?')
     }
-    // x x x x x x x x x x x x x x
 
-    function hostileWhy () {
-        // currentUser.hostileWhy = agent.parameters.power
-        agent.add(responses.hostileWhy);
-        agent.add(relances.hostileWhy);
+
+
+
+
+
+    // classic function (not an intent handler)
+    function handleFinal() {
+        console.log('hey le final : avec le/les contexte(s) :')
+        console.log(agent.contexts)
+
+        agent.add('ok , final step has been reached ! experience is over, thanks');
     }
-    // x x x x x x x x x x x x x x
-
-    function planet () {
-        // currentUser.hostileWhy = agent.parameters.power
-        agent.add(responses.planet);
-        agent.add(relances.planet);
-    }
-    // x x x x x x x x x x x x x x
-
-
-
-
-    // MANUAL ORIENTATION
-    // to avoid confusions in intents orientations
-    // if (agent.action === 'humanOrAlienChoice') {
-
-    // }
-
-
-
 
 
     // Mapping Intents
     let intentMap = new Map()
-    intentMap.set('Default Welcome Intent', welcome)
-    intentMap.set('Default Fallback Intent', fallback)
+    intentMap.set('Default Fallback Intent', defaultFallbackIntent)
 
-    intentMap.set('humanOrAlien', humanOrAlien)
+    intentMap.set('favoritecolor', favoritecolor)
+    intentMap.set('ghost', ghost)
+    intentMap.set('alien', alien)
+    intentMap.set('human', human)
+    intentMap.set('makebabies', makebabies)
+    intentMap.set('drinkbeers', drinkbeers)
 
-    intentMap.set('mariedYesNo', mariedYesNo)
+    intentMap.set('destroyyes', destroyyes)
+    intentMap.set('destroyno', destroyno)
 
-    intentMap.set('parisienYesNo', parisienYesNo)
-    
-    intentMap.set('superpowerYesNo', superpowerYesNo)
-    intentMap.set('superpowerWhich', superpowerWhich)
-
-    intentMap.set('hostileYesNo', hostileYesNo)
-    intentMap.set('hostileWhy', hostileWhy)
-    
-    intentMap.set('planet', planet)
-    
-    intentMap.set('colors', colors)
-    intentMap.set('coffeeYesNo', coffeeYesNo)
-
+    intentMap.set('hipster', handleFinal)
+    intentMap.set('sportcar', handleFinal)
+    intentMap.set('humanlastyes', handleFinal)
+    intentMap.set('humanlastno', handleFinal)
+    intentMap.set('alienlastyes', handleFinal)
+    intentMap.set('alienlastno', handleFinal)
+    intentMap.set('endcodegood', handleFinal)
+    intentMap.set('endcodebad', handleFinal)
 
     agent.handleRequest(intentMap)
 
@@ -235,63 +169,6 @@ app.post('/dialogflow', express.json(), (req, res) => {
     console.log('action reçus : ', agent.action);
 
     console.log('le log currentUser : ', currentUser);
-
-
 })
 
 app.listen(process.env.PORT || 8080)
-
-
-
-
-// exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
-//     const agent = new WebhookClient({ request, response });
-//     console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
-//     console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
-//
-//     function welcome(agent) {
-//         agent.add(`Welcome to my agent!`);
-//     }
-//
-//     function fallback(agent) {
-//         agent.add(`I didn't understand`);
-//         agent.add(`I'm sorry, can you try again?`);
-//     }
-
-    // // Uncomment and edit to make your own intent handler
-    // // uncomment `intentMap.set('your intent name here', yourFunctionHandler);`
-    // // below to get this function to be run when a Dialogflow intent is matched
-    // function yourFunctionHandler(agent) {
-    //   agent.add(`This message is from Dialogflow's Cloud Functions for Firebase editor!`);
-    //   agent.add(new Card({
-    //       title: `Title: this is a card title`,
-    //       imageUrl: 'https://developers.google.com/actions/images/badges/XPM_BADGING_GoogleAssistant_VER.png',
-    //       text: `This is the body text of a card.  You can even use line\n  breaks and emoji! 💁`,
-    //       buttonText: 'This is a button',
-    //       buttonUrl: 'https://assistant.google.com/'
-    //     })
-    //   );
-    //   agent.add(new Suggestion(`Quick Reply`));
-    //   agent.add(new Suggestion(`Suggestion`));
-    //   agent.setContext({ name: 'weather', lifespan: 2, parameters: { city: 'Rome' }});
-    // }
-
-    // // Uncomment and edit to make your own Google Assistant intent handler
-    // // uncomment `intentMap.set('your intent name here', googleAssistantHandler);`
-    // // below to get this function to be run when a Dialogflow intent is matched
-    // function googleAssistantHandler(agent) {
-    //   let conv = agent.conv(); // Get Actions on Google library conv instance
-    //   conv.ask('Hello from the Actions on Google client library!') // Use Actions on Google library
-    //   agent.add(conv); // Add Actions on Google library responses to your agent's response
-    // }
-    // // See https://github.com/dialogflow/dialogflow-fulfillment-nodejs/tree/master/samples/actions-on-google
-    // // for a complete Dialogflow fulfillment library Actions on Google client library v2 integration sample
-
-    // Run the proper function handler based on the matched Dialogflow intent name
-//     let intentMap = new Map();
-//     intentMap.set('Default Welcome Intent', welcome);
-//     intentMap.set('Default Fallback Intent', fallback);
-//     // intentMap.set('your intent name here', yourFunctionHandler);
-//     // intentMap.set('your intent name here', googleAssistantHandler);
-//     agent.handleRequest(intentMap);
-// });
